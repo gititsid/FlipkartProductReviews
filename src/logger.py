@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime
-from constants import PROJECT_ROOT
+from src.constants import PROJECT_ROOT
 
 TODAY = datetime.now().strftime('%Y-%m-%d')
 LOG_FILE = f"{datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}.log"
