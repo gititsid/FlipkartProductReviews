@@ -54,61 +54,64 @@ class FlipkartProductReviews:
         try:
             product_page_links = self.get_product_page_links(search_item)
 
-            logging.info(f">>> getting product reviews for first link: {product_page_links[0]}")
-            productlink = product_page_links[0]
+            logging.info(f">>>> getting product reviews for all links")
 
-            logging.info(f"Getting html object for {productlink}")
-            product_req = urlopen(productlink)
-            product_html = bs(product_req, 'html.parser')
+            reviews_from_all_pages = []
+            for page_no, productlink in enumerate(product_page_links):
+                logging.info(f">>> Getting html object for {page_no}, link - {productlink}")
 
-            logging.info(f"Getting all comment boxes")
-            comment_boxes = product_html.find_all("div",{"class":"RcXBOT"})
-            logging.info(f"found {len(comment_boxes)} on first link")
+                product_req = urlopen(productlink)
+                product_html = bs(product_req, 'html.parser')
+
+                logging.info(f"Getting all comment boxes")
+                comment_boxes = product_html.find_all("div",{"class":"RcXBOT"})
+                logging.info(f"found {len(comment_boxes)} comment box on this link")
+                
+                logging.info(f">> fetching review details from all comments boxes")
+                allreviews = []
+                for comment_box_number, comment_box in enumerate(comment_boxes):
+                    try:
+                        reviews = {"product": search_item}
+
+                        logging.info(f"Getting reviewe details from box-{comment_box_number}")
+                        reviewer = comment_box.div.div.find_all("p",{"class":"_2NsDsF AwS1CA"})[0].text
+                        rating = comment_box.div.div.div.div.text
+                        review_title = comment_box.div.div.div.p.text
+                        review_text = comment_box.div.div.find_all("div",{"class":""})[0].text
+
+                        review_text = review_text.replace("READ MORE", "")
+                        logging.info(f"Found review details from box-{comment_box_number}")
+
+                        reviews['reviewer'] = reviewer
+                        reviews['rating'] = rating
+                        reviews['review_title'] = review_title
+                        reviews['review_text'] = review_text
+
+                        allreviews.append(reviews)
+
+                    except Exception as e:
+                        logging.error(f"failed to get review details for box-{comment_box_number}")
+                        pass
+                
+                logging.info(">> fetched review details from all correct prouct boxes!")
+                
+                logging.info(f">>> got all correct product reviews from page-{page_no}, link: {productlink}!")
+
+                reviews_from_all_pages.extend(allreviews)
             
-            logging.info(f">> fetching review details from all comments boxes")
-            allreviews = []
-            for comment_box_number, comment_box in enumerate(comment_boxes):
-                try:
-                    reviews = {"product": search_item}
+            logging.info(">>>> got product reviews for all links!")
+                         
+            final_reviews = reviews_from_all_pages[:number_of_reviews]
+            logging.info(f"found {len(reviews_from_all_pages)} in total, user requested {number_of_reviews} reviews,  available reviews = {len(final_reviews)}. Returning {len(final_reviews)} reviews!")
 
-                    logging.info(f"Getting reviewer name from box-{comment_box_number}")
-                    reviewer = comment_box.div.div.find_all("p",{"class":"_2NsDsF AwS1CA"})[0].text
-                    logging.info(f"Found reviewer name from box-{comment_box_number}")
-
-                    logging.info(f"Getting rating from box-{comment_box_number}")
-                    rating = comment_box.div.div.div.div.text
-                    logging.info(f"Found rating from box-{comment_box_number}")
-
-                    logging.info(f"Getting review title from box-{comment_box_number}")
-                    review_title = comment_box.div.div.div.p.text
-                    logging.info(f"Found review title from box-{comment_box_number}")
-
-                    logging.info(f"Getting review text from box-{comment_box_number}")
-                    review_text = comment_box.div.div.find_all("div",{"class":""})[0].text
-                    logging.info(f"Found review text from box-{comment_box_number}")
-
-                    reviews['reviewer'] = reviewer
-                    reviews['rating'] = rating
-                    reviews['review_title'] = review_title
-                    reviews['review_text'] = review_text
-
-                    allreviews.append(reviews)
-
-                except Exception as e:
-                    logging.error(f"failed to get review details for box-{comment_box_number}")
-                    pass
-            logging.info(">> fetched review details from all correct prouct boxes!")
-            
-            logging.info(f">>> got all correct product reviews from first link: {product_page_links[0]}!")
-
-            final_reviews = allreviews[:number_of_reviews]
-            logging.info(f"found {len(allreviews)} in total, user requested {number_of_reviews} reviews,  available reviews = {len(final_reviews)}. Returning {len(final_reviews)} reviews!")
-
+            for idx, review_dict in enumerate(final_reviews):
+                review_dict = {"S.No": idx+1, **review_dict}
+                final_reviews[idx] = review_dict
 
             return final_reviews
 
         except Exception as e:
-            logging.error(f">>> error occured while getting review details!")
+            logging.error(f">>>> error occured while getting review details!")
             raise CustomException(e, sys)
 
 
