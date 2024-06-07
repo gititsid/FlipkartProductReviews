@@ -33,7 +33,7 @@ def push_to_mongodb(reviews: list):
                 logging.info("Pinged your deployment. You successfully connected to MongoDB!")
 
                 db = client['flipkart_product_reviews']
-                dataset = db['flipkart_product_reviews']
+                dataset = db['flipkart_product_reviews_data']
                 
                 logging.info("inserting reviews into: flipkart_product_reviews dataset")
                 dataset.insert_many(reviews)
